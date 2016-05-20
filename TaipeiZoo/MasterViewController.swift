@@ -106,7 +106,7 @@ class MasterViewController: UITableViewController, NSURLSessionDelegate, NSURLSe
         }
     }
 
-    // MARK: - Table View for 
+    // MARK: - Table View
 
     override func numberOfSectionsInTableView(tableView: UITableView) -> Int {
         return 1
