@@ -8,11 +8,12 @@
 
 import UIKit
 
-class MasterViewController: UITableViewController {
+class MasterViewController: UITableViewController, NSURLSessionDelegate, NSURLSessionDownloadDelegate {
 
     var detailViewController: DetailViewController? = nil
     var objects = [AnyObject]()
 
+    var dataArray = [AnyObject]()// using to store the animals data
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -24,6 +25,54 @@ class MasterViewController: UITableViewController {
         if let split = self.splitViewController {
             let controllers = split.viewControllers
             self.detailViewController = (controllers[controllers.count-1] as! UINavigationController).topViewController as? DetailViewController
+        }
+        
+        
+        //getting data from taipei open data
+        
+        //set the url
+        let url = NSURL(string: "http://data.taipei/opendata/datalist/apiAccess?scope=resourceAquire&rid=a3e2b221-75e0-45c1-8f97-75acbd43d613")
+        
+        //建立一般的session設定
+        let sessionWithConfigure = NSURLSessionConfiguration.defaultSessionConfiguration()
+        
+        //設定委任對象為自己
+        let session = NSURLSession(configuration: sessionWithConfigure, delegate: self, delegateQueue: NSOperationQueue.mainQueue())
+        
+        //set the downloading url
+        let dataTask = session.downloadTaskWithURL(url!)
+        
+        //重啟or重新下載動作
+        dataTask.resume()
+        
+        if let split = self.splitViewController{
+            let controllers = split.viewControllers
+            self.detailViewController = (controllers[controllers.count - 1] as! UINavigationController).topViewController as? DetailViewController
+        }
+        
+      
+        
+        
+    }
+    
+    func URLSession(session: NSURLSession, downloadTask: NSURLSessionDownloadTask, didFinishDownloadingToURL location: NSURL) {
+        
+        do{
+            
+            //processing json data at here
+            let datadic = try NSJSONSerialization.JSONObjectWithData(NSData(contentsOfURL: location)!, options: NSJSONReadingOptions.MutableContainers) as! [String:[String:AnyObject]]
+            
+            //find the construction of result 
+            dataArray = datadic["result"]!["result"] as! [AnyObject]
+            
+            //refreshing the tableview
+            self.tableView.reloadData()
+            
+            
+        }catch{
+            
+            print("error !!")
+            
         }
     }
 
@@ -64,14 +113,15 @@ class MasterViewController: UITableViewController {
     }
 
     override func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return objects.count
+        return dataArray.count
     }
 
     override func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCellWithIdentifier("Cell", forIndexPath: indexPath)
 
-        let object = objects[indexPath.row] as! NSDate
-        cell.textLabel!.text = object.description
+        //顯示動物的中文名稱於Table View中
+        cell.textLabel?.text = dataArray[indexPath.row]["A_Name_Ch"] as? String
+        
         return cell
     }
 
